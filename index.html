@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Face Video Call</title>
+<style>
+body{margin:0;background:#111;color:white;font-family:sans-serif;text-align:center}
+#videos{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;padding:20px}
+video{width:45%;max-width:400px;height:300px;background:#222;border-radius:15px;object-fit:cover;border:2px solid #0a7a2c}
+button{background:#0a7a2c;color:white;border:none;padding:12px 25px;border-radius:25px;font-size:16px;font-weight:700;margin:10px;cursor:pointer}
+input{padding:12px;border-radius:10px;border:none;width:200px;margin:10px}
+h1{color:#0a7a2c}
+</style>
+</head>
+<body>
+<h1>📹 FACE VIDEO CALL</h1>
+<p id="myId">Loading...</p>
+<div>
+<input id="roomId" placeholder="Enter friend Room ID">
+<button onclick="joinCall()">Join Call</button>
+</div>
+<div>
+<button onclick="startCall()">Start Camera</button>
+<button onclick="endCall()" style="background:red">End Call</button>
+</div>
+<div id="videos">
+<video id="myVideo" autoplay muted playsinline></video>
+<video id="friendVideo" autoplay playsinline></video>
+</div>
+<p>Share your ID with your friend to call you</p>
+
+<script src="https://unpkg.com/peerjs@1.5.3/dist/peerjs.min.js"></script>
+<script>
+let peer, localStream;
+let myPeerId = 'kano-' + Math.floor(Math.random()*10000);
+
+const myVideo = document.getElementById('myVideo');
+const friendVideo = document.getElementById('friendVideo');
+
+function startCall(){
+ navigator.mediaDevices.getUserMedia({video:{facingMode:"user"}, audio:true})
+ .then(stream=>{
+   localStream = stream;
+   myVideo.srcObject = stream;
+   initPeer();
+ }).catch(e=>alert("Allow camera: "+e));
+}
+
+function initPeer(){
+ peer = new Peer(myPeerId);
+ peer.on('open', id=>{
+   document.getElementById('myId').innerText = "Your Room ID: " + id + " (Share am to friend)";
+ });
+ peer.on('call', call=>{
+   call.answer(localStream);
+   call.on('stream', remoteStream=>{
+     friendVideo.srcObject = remoteStream;
+   });
+ });
+}
+
+function joinCall(){
+ let friendId = document.getElementById('roomId').value;
+ if(!friendId) return alert("Put friend ID");
+ let call = peer.call(friendId, localStream);
+ call.on('stream', remoteStream=>{
+   friendVideo.srcObject = remoteStream;
+ });
+}
+
+function endCall(){
+ if(localStream) localStream.getTracks().forEach(t=>t.stop());
+ location.reload();
+}
+
+// Auto start
+startCall();
+</script>
+</body>
+</html>
